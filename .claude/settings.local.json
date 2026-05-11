@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python pdd_request2.py)"
+    ]
+  }
+}
