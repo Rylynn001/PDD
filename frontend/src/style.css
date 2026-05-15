@@ -1,0 +1,118 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  background: #0f0f13;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ── Element Plus 覆写 ── */
+.el-input__wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.el-input__inner {
+  background: transparent !important;
+  color: #e8e8ed !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+}
+
+.el-input__inner::placeholder {
+  color: rgba(235, 235, 245, 0.3) !important;
+}
+
+.el-date-editor.el-input {
+  width: 100% !important;
+}
+
+.el-date-editor .el-input__prefix {
+  color: rgba(235, 235, 245, 0.4) !important;
+}
+
+.el-date-editor .el-input__suffix {
+  color: rgba(235, 235, 245, 0.3) !important;
+}
+
+/* 日期弹窗毛玻璃 */
+.el-picker__popper {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 普通日期文字 */
+.el-picker__popper .el-date-table td .el-date-table-cell__text {
+  color: #1d1d1f !important;
+  font-weight: 500 !important;
+}
+
+/* 今天 */
+.el-picker__popper .el-date-table td.today .el-date-table-cell__text {
+  color: #2563eb !important;
+}
+
+/* hover 单个日期 */
+.el-picker__popper .el-date-table td.available:hover .el-date-table-cell__text {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #2563eb !important;
+}
+
+/* 选中的起止日期 */
+.el-picker__popper .el-date-table td.current:not(.disabled) .el-date-table-cell__text,
+.el-picker__popper .el-date-table td.start-date .el-date-table-cell__text,
+.el-picker__popper .el-date-table td.end-date .el-date-table-cell__text {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+/* 范围中间区域 */
+.el-picker__popper .el-date-table td.in-range .el-date-table-cell {
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+
+.el-picker__popper .el-date-table td.in-range .el-date-table-cell__text {
+  color: #1d3a8a !important;
+}
+
+/* 禁用日期 */
+.el-picker__popper .el-date-table td.disabled .el-date-table-cell__text {
+  color: rgba(0, 0, 0, 0.25) !important;
+  font-weight: 400 !important;
+}
+
+/* 表头（星期）和月份标题 */
+.el-picker__popper .el-date-picker__header-label,
+.el-picker__popper .el-date-table th {
+  color: #6b6b6b !important;
+  font-weight: 500 !important;
+}
+
+/* 翻页箭头 */
+.el-picker__popper .el-picker-panel__icon-btn {
+  color: #6b6b6b !important;
+}
+
+.el-picker__popper .el-picker-panel__icon-btn:hover {
+  color: #2563eb !important;
+}
