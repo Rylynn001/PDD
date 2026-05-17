@@ -1,69 +1,89 @@
 import asyncio
-from playwright.async_api import async_playwright, BrowserContext, Page
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from playwright.sync_api import sync_playwright, BrowserContext, Page
 
+_executor = ThreadPoolExecutor(max_workers=1)
 _playwright = None
 _context: BrowserContext | None = None
 _page: Page | None = None
 
+TARGET = "https://mms.pinduoduo.com/sydney/api/mallTrade/queryMallTradeList"
 
-async def start_browser():
+
+def _do_start():
     global _playwright, _context, _page
-    _playwright = await async_playwright().start()
-    _context = await _playwright.chromium.launch_persistent_context(
+    _playwright = sync_playwright().start()
+    _context = _playwright.chromium.launch_persistent_context(
         user_data_dir="./pdd_browser/user_data",
         headless=False,
+        channel="chrome",
         args=["--disable-blink-features=AutomationControlled"],
     )
     pages = _context.pages
-    _page = pages[0] if pages else await _context.new_page()
-    await _page.goto("https://mms.pinduoduo.com")
+    _page = pages[0] if pages else _context.new_page()
+    _page.goto("https://mms.pinduoduo.com")
 
 
-async def stop_browser():
+def _do_stop():
     global _playwright, _context, _page
     if _context:
-        await _context.close()
+        _context.close()
     if _playwright:
-        await _playwright.stop()
+        _playwright.stop()
     _context = None
     _page = None
     _playwright = None
 
 
-async def capture_auth() -> dict[str, str]:
-    """在浏览器上下文内发起一次真实请求，拦截并返回 anti-content 和 cookie"""
+def _do_capture() -> dict[str, str]:
     if _context is None or _page is None:
         raise RuntimeError("浏览器未启动")
 
     captured: dict[str, str] = {}
-    event = asyncio.Event()
+    done = threading.Event()
 
-    TARGET = "https://mms.pinduoduo.com/sydney/api/mallTrade/queryMallTradeList"
+    # CDP 协议可以拿到浏览器内核层实际发出的完整请求头（和 Chrome DevTools 看到的一致）
+    cdp = _context.new_cdp_session(_page)
+    cdp.send("Network.enable")
 
-    async def handle_route(route):
-        req = route.request
-        headers = await req.all_headers()
-        captured["anti"] = headers.get("anti-content", "")
-        captured["cookie"] = headers.get("cookie", "")
-        event.set()
-        await route.abort()  # 拦截即止，不真正发出
+    def on_extra_info(params):
+        if done.is_set():
+            return
+        headers = {k.lower(): v for k, v in params.get("headers", {}).items()}
+        anti = headers.get("anti-content", "")
+        if anti:
+            captured["anti"] = anti
+            captured["cookie"] = headers.get("cookie", "")
+            done.set()
 
-    await _context.route(TARGET, handle_route)
+    cdp.on("Network.requestWillBeSentExtraInfo", on_extra_info)
+
     try:
-        # 在页面上下文内触发一次请求，让浏览器自动注入 cookie 和 anti-content
-        await _page.evaluate(
-            """(url) => fetch(url, {
-                method: 'POST',
-                headers: {'content-type': 'application/json'},
-                body: JSON.stringify({queryType:7, queryDate:'2026-01-01', startDate:'2026-01-01', endDate:'2026-01-01'})
-            }).catch(() => {})""",
-            TARGET,
-        )
-        await asyncio.wait_for(event.wait(), timeout=10)
+        _page.goto("https://mms.pinduoduo.com/home/", wait_until="domcontentloaded")
+        done.wait(timeout=15)
     finally:
-        await _context.unroute(TARGET, handle_route)
+        try:
+            cdp.detach()
+        except Exception:
+            pass
 
-    if not captured.get("anti") and not captured.get("cookie"):
-        raise RuntimeError("未能捕获认证信息，请确认浏览器已登录拼多多商家后台")
+    if not captured.get("anti"):
+        raise RuntimeError("未能捕获 anti-content，请确认浏览器已登录拼多多商家后台")
 
     return captured
+
+
+async def start_browser():
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(_executor, _do_start)
+
+
+async def stop_browser():
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(_executor, _do_stop)
+
+
+async def capture_auth() -> dict[str, str]:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(_executor, _do_capture)

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python pdd_request2.py)"
+      "Bash(python pdd_request2.py)",
+      "Bash(git rm *)"
     ]
   }
 }

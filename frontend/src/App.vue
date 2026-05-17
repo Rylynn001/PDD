@@ -15,9 +15,11 @@ const dateRange = ref<[string, string] | null>(null)
 const loading = ref(false)
 const exporting = ref(false)
 const capturing = ref(false)
+const showManual = ref(false)
 const tableData = ref<TradeRow[]>([])
 const lastPayload = ref<object | null>(null)
 
+const captured = computed(() => !!(anti.value && cookie.value))
 const columns = computed(() => (tableData.value.length ? Object.keys(tableData.value[0]) : []))
 const hasData = computed(() => tableData.value.length > 0)
 
@@ -149,31 +151,34 @@ async function handleExport() {
       <!-- 表单卡片 -->
       <div class="glass-card form-card">
         <div class="form-grid">
-          <!-- Anti-Content -->
-          <div class="field field-full">
-            <label class="label">Anti-Content</label>
-            <div class="input-wrap">
-              <textarea
-                v-model="anti"
-                class="glass-textarea"
-                rows="3"
-                placeholder="粘贴 anti-content 值…"
-              />
+          <!-- 认证状态行 -->
+          <div class="auth-row">
+            <div class="auth-status" :class="captured ? 'auth-ok' : 'auth-empty'">
+              <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                <path v-if="captured" d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path v-else d="M8 5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              {{ captured ? '认证已就绪' : '未捕获认证' }}
             </div>
+            <button class="btn-link" @click="showManual = !showManual">
+              {{ showManual ? '收起' : '手动填写' }}
+            </button>
           </div>
 
-          <!-- Cookie -->
-          <div class="field field-full">
-            <label class="label">Cookie</label>
-            <div class="input-wrap">
-              <textarea
-                v-model="cookie"
-                class="glass-textarea"
-                rows="3"
-                placeholder="粘贴 Cookie 值…"
-              />
+          <!-- 手动输入（折叠） -->
+          <Transition name="slide">
+            <div v-if="showManual" class="manual-fields">
+              <div class="field">
+                <label class="label">Anti-Content</label>
+                <textarea v-model="anti" class="glass-textarea" rows="2" placeholder="粘贴 anti-content 值…" />
+              </div>
+              <div class="field">
+                <label class="label">Cookie</label>
+                <textarea v-model="cookie" class="glass-textarea" rows="2" placeholder="粘贴 Cookie 值…" />
+              </div>
             </div>
-          </div>
+          </Transition>
 
           <!-- 日期范围 -->
           <div class="field field-full">
@@ -267,6 +272,71 @@ async function handleExport() {
 </template>
 
 <style scoped>
+/* ── 认证状态行 ── */
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.auth-empty {
+  color: rgba(235, 235, 245, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-ok {
+  color: rgba(52, 199, 89, 0.9);
+  background: rgba(52, 199, 89, 0.08);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12px;
+  color: rgba(109, 158, 255, 0.7);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-link:hover {
+  color: rgba(109, 158, 255, 1);
+}
+
+.manual-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 折叠动画 ── */
+.slide-enter-active,
+.slide-leave-active {
+  transition: opacity 0.25s ease, max-height 0.3s ease;
+  overflow: hidden;
+  max-height: 300px;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
 /* ── 页面容器 ── */
 .page {
   min-height: 100vh;

@@ -47,8 +47,12 @@ def fetch_trade_data(anti: str, cookie: str, start_date: str, end_date: str) -> 
         raise HTTPException(status_code=resp.status_code, detail="上游接口请求失败")
 
     data = resp.json()
+    print(f"[DEBUG] API response: {json.dumps(data, ensure_ascii=False)[:500]}")
     raw = _extract_raw(data)
-    return _filter(raw, start_date, end_date)
+    print(f"[DEBUG] raw type={type(raw)}, len={len(raw) if isinstance(raw, list) else 'N/A'}")
+    result = _filter(raw, start_date, end_date)
+    print(f"[DEBUG] filtered result count: {len(result)}")
+    return result
 
 
 def _extract_raw(data: dict):
