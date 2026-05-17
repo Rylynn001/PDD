@@ -29,7 +29,12 @@ def _date_chunks(start_date: str, end_date: str) -> list[tuple[str, str]]:
 async def _fetch_all(req: TradeRequest) -> list[dict]:
     chunks = _date_chunks(req.start_date, req.end_date)
     all_data = []
-    anti, cookie = req.anti, req.cookie
+
+    try:
+        auth = await capture_auth()
+        anti, cookie = auth["anti"], auth["cookie"]
+    except Exception:
+        anti, cookie = req.anti, req.cookie
 
     for i, (chunk_start, chunk_end) in enumerate(chunks):
         if i > 0:
@@ -39,7 +44,7 @@ async def _fetch_all(req: TradeRequest) -> list[dict]:
                 anti = auth["anti"]
                 cookie = auth["cookie"]
             except Exception:
-                pass  # 捕获失败则沿用上一次的 auth
+                pass
 
         data = fetch_trade_data(anti, cookie, chunk_start, chunk_end)
         all_data.extend(data)
